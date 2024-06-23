@@ -1,0 +1,71 @@
+name: 'Build jupyter pytorch apbsn'
+on:
+  push:
+  workflow_dispatch:
+
+env:
+  TARGET_REGISTORY: registry.cn-hangzhou.aliyuncs.com
+  TARGET_NAMESPACE: linuzb
+  WORKLOAD_TYPE: pytorch-ddp
+  # https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch/tags
+  # version: https://docs.nvidia.com/deeplearning/frameworks/pytorch-release-notes/rel-24-03.html
+  BASE_REGISTORY: nvcr.io
+  BASE_NAMESPACE: nvidia
+  BASE_IMAGE: pytorch
+  BASE_TAG: 24.03-py3
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+      # Image with CUDA needs extra disk space
+      - name: Free disk space 🧹
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: false
+          swap-storage: false
+
+      - name: Remove unnecessary files
+        run: |
+          echo "1 Free space:"
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo rm -rf /opt/hostedtoolcache
+          echo "2 Free space:"
+          df -h
+
+      # git checkout code
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Use the git command to retrieve the current tag information and store it in the environment variable APP_VERSION.
+      - name: Generate App Version
+        run: echo APP_VERSION=`git describe --tags --always` >> $GITHUB_ENV
+
+      # 登录 alibaba acr
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.TARGET_REGISTORY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_TOKEN }}
+
+      - name: Build and push
+        id: docker_build_
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: deploy/docker/Dockerfile
+          # docker build arg
+          build-args: |
+            BASE_CONTAINER=${{ env.BASE_REGISTORY }}/${{ env.BASE_NAMESPACE }}/${{ env.BASE_IMAGE }}:${{ env.BASE_TAG }}
+          tags: |
+            ${{ env.TARGET_REGISTORY }}/${{ env.TARGET_NAMESPACE }}/${{ env.BASE_IMAGE }}:${{ env.WORKLOAD_TYPE }}-${{ env.APP_VERSION }}
