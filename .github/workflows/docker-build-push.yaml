@@ -9,7 +9,7 @@ env:
   TARGET_REPO: pytorch
   WORKLOAD_TYPE: pytorch-ddp
   # https://hub.docker.com/_/python
-  BASE_REGISTORY: docker.io
+  BASE_REGISTRY: docker.io
   BASE_NAMESPACE: nvidia
   BASE_REPO: cuda
   BASE_TAG: 11.8.0-cudnn8-runtime-ubuntu22.04
