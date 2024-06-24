@@ -1,3 +1,4 @@
+ARG BASE_CONTAINER=nvcr.io/nvidia/pytorch:24.03-py3
 ARG PYTHON_BASE=3.10-slim
 # build stage
 FROM python:$PYTHON_BASE AS builder
@@ -16,7 +17,6 @@ COPY src/ /project/src
 WORKDIR /project
 RUN pdm install --check --prod --no-editable
 
-ARG BASE_CONTAINER=nvcr.io/nvidia/pytorch:24.03-py3
 FROM $BASE_CONTAINER
 
 LABEL maintainer="Linuzb <levizebulon@gmail.com>"
