@@ -1,0 +1,47 @@
+apiVersion: "kubeflow.org/v1"
+kind: "PyTorchJob"
+metadata:
+  name: "pytorch-ddp-example-nccl"
+spec:
+  pytorchReplicaSpecs:
+    Master:
+      replicas: 1
+      # https://www.kubeflow.org/docs/components/training/user-guides/tensorflow/
+      restartPolicy: Never
+      template:
+        spec:
+          tolerations:
+          - key: "node-role.kubernetes.io/control-plane"
+            operator: "Exists"
+            effect: "NoSchedule"
+          containers:
+            - name: pytorch
+              image: registry.cn/linuzb/python:pytorch-ddp-a38f06e
+              # args: ["--local_rank", "1"]
+              command:
+                - "python"
+                - "/project/src/pytorch_ddp_example/__main__.py"
+                - "--local_rank=1"
+              resources: 
+                limits:
+                  nvidia.com/gpu: 1
+    Worker:
+      replicas: 1
+      restartPolicy: Never
+      template:
+        spec:
+          tolerations:
+          - key: "node-role.kubernetes.io/control-plane"
+            operator: "Exists"
+            effect: "NoSchedule"
+          containers: 
+            - name: pytorch
+              image: registry.cn/linuzb/python:pytorch-ddp-a38f06e
+              # args: ["--local_rank", "1"]
+              command:
+                - "python"
+                - "/project/src/pytorch_ddp_example/__main__.py"
+                - "--local_rank=1"
+              resources: 
+                limits:
+                  nvidia.com/gpu: 1
