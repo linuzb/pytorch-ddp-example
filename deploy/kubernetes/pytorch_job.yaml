@@ -16,7 +16,7 @@ spec:
             effect: "NoSchedule"
           containers:
             - name: pytorch
-              image: registry.cn/linuzb/python:pytorch-ddp-a38f06e
+              image: registry.cn/linuzb/pytorch:pytorch-ddp-5742c70
               # args: ["--local_rank", "1"]
               command:
                 - "python"
@@ -36,7 +36,7 @@ spec:
             effect: "NoSchedule"
           containers: 
             - name: pytorch
-              image: registry.cn/linuzb/python:pytorch-ddp-a38f06e
+              image: registry.cn/linuzb/pytorch:pytorch-ddp-5742c70
               # args: ["--local_rank", "1"]
               command:
                 - "python"
