@@ -27,6 +27,7 @@ class ToyModel(nn.Module):
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
+
 # 假设我们的数据是这个
 def get_dataset():
     transform = torchvision.transforms.Compose([
@@ -46,7 +47,7 @@ def get_dataset():
     
 ### 2. 初始化我们的模型、数据、各种配置  ####
 # DDP：从外部得到local_rank参数
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description="PyTorch DDP Example")
 parser.add_argument("--local_rank", default=-1, type=int)
 FLAGS = parser.parse_args()
 local_rank = FLAGS.local_rank

@@ -7,12 +7,11 @@ env:
   TARGET_REGISTORY: registry.cn-hangzhou.aliyuncs.com
   TARGET_NAMESPACE: linuzb
   WORKLOAD_TYPE: pytorch-ddp
-  # https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch/tags
-  # version: https://docs.nvidia.com/deeplearning/frameworks/pytorch-release-notes/rel-24-03.html
-  BASE_REGISTORY: nvcr.io
-  BASE_NAMESPACE: nvidia
-  BASE_IMAGE: pytorch
-  BASE_TAG: 24.03-py3
+  # https://hub.docker.com/_/python
+  BASE_REGISTORY: docker.io
+  BASE_NAMESPACE: library
+  BASE_IMAGE: python
+  BASE_TAG: 3.10.14-bookworm
 
 jobs:
   build:
