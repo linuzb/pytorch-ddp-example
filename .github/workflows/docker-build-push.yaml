@@ -12,7 +12,7 @@ env:
   BASE_REGISTORY: docker.io
   BASE_NAMESPACE: nvidia
   BASE_REGISTRY: cuda
-  BASE_TAG: 11.8.0-cudnn8-devel-ubuntu22.04
+  BASE_TAG: 11.8.0-cudnn8-runtime-ubuntu22.04
 
 jobs:
   build:
