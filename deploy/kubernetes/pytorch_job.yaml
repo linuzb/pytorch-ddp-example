@@ -7,7 +7,7 @@ spec:
     Master:
       replicas: 1
       # https://www.kubeflow.org/docs/components/training/user-guides/tensorflow/
-      restartPolicy: Never
+      restartPolicy: OnFailure
       template:
         spec:
           tolerations:
@@ -16,17 +16,26 @@ spec:
             effect: "NoSchedule"
           containers:
             - name: pytorch
-              image: registry.cn/linuzb/pytorch:pytorch-ddp-3fa9ed5
+              image: registry.cn/linuzb/pytorch:pytorch-ddp-3da7d82
               command:
               - "python"
               - "/project/src/pytorch_ddp_example/__main__.py"
-              - "--local_rank=0"
+              args:
+              - --epochs=50
+              - --batch-size=128
+              - --test-batch-size=1000
+              - --lr=0.01
+              - --momentum=0.5
+              - --seed=1
+              - --log-interval=10
+              - --dir=logs
+              - --backend=nccl
               resources: 
                 limits:
                   nvidia.com/gpu: 1
     Worker:
       replicas: 1
-      restartPolicy: Never
+      restartPolicy: OnFailure
       template:
         spec:
           tolerations:
@@ -35,11 +44,20 @@ spec:
             effect: "NoSchedule"
           containers: 
             - name: pytorch
-              image: registry.cn/linuzb/pytorch:pytorch-ddp-3fa9ed5
+              image: registry.cn/linuzb/pytorch:pytorch-ddp-3da7d82
               command:
               - "python"
               - "/project/src/pytorch_ddp_example/__main__.py"
-              - "--local_rank=0"
+              args:
+              - --epochs=50
+              - --batch-size=128
+              - --test-batch-size=1000
+              - --lr=0.01
+              - --momentum=0.5
+              - --seed=1
+              - --log-interval=10
+              - --dir=logs
+              - --backend=nccl
               resources: 
                 limits:
                   nvidia.com/gpu: 1
