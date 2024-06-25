@@ -29,10 +29,17 @@ WORKDIR /project
 
 # retrieve packages from build stage
 COPY --from=builder /project/.venv/ /project/.venv
-# install python3
-COPY --from=builder /usr/local/bin/python3 /usr/local/bin/python
 
 ENV PATH="/project/.venv/bin:$PATH"
+
+# install python3
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update --yes \
+    && apt-get install --yes --no-install-recommends \
+    python3 \
+    python3-pip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && ln -sf /usr/bin/python3 /project/.venv/bin/python
 
 COPY . .
 
