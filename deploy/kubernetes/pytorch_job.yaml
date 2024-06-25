@@ -16,12 +16,12 @@ spec:
             effect: "NoSchedule"
           containers:
             - name: pytorch
-              image: registry.cn/linuzb/pytorch:pytorch-ddp-5742c70
-              # args: ["--local_rank", "1"]
-              command:
-                - "python"
-                - "/project/src/pytorch_ddp_example/__main__.py"
-                - "--local_rank=1"
+              image: registry.cn/linuzb/pytorch:pytorch-ddp-045d72a
+              command: ["/bin/bash", "-c"] # 使用bash作为入口点，并传入-c参数以执行后续命令字符串
+              args: ["
+                ln -sf /usr/bin/python3 /project/.venv/bin/python; 
+                python /project/src/pytorch_ddp_example/__main__.py --local_rank=0
+              "] # 多个命令以分号隔开，形成一个字符串
               resources: 
                 limits:
                   nvidia.com/gpu: 1
@@ -36,12 +36,12 @@ spec:
             effect: "NoSchedule"
           containers: 
             - name: pytorch
-              image: registry.cn/linuzb/pytorch:pytorch-ddp-5742c70
-              # args: ["--local_rank", "1"]
-              command:
-                - "python"
-                - "/project/src/pytorch_ddp_example/__main__.py"
-                - "--local_rank=1"
+              image: registry.cn/linuzb/pytorch:pytorch-ddp-045d72a
+              command: ["/bin/bash", "-c"] # 使用bash作为入口点，并传入-c参数以执行后续命令字符串
+              args: ["
+                ln -sf /usr/bin/python3 /project/.venv/bin/python; 
+                python /project/src/pytorch_ddp_example/__main__.py --local_rank=0
+              "] # 多个命令以分号隔开，形成一个字符串
               resources: 
                 limits:
                   nvidia.com/gpu: 1
