@@ -61,7 +61,7 @@ jobs:
         id: docker_build_
         uses: docker/build-push-action@v2
         with:
-          push: true
+          push: false
           context: .
           file: deploy/docker/Dockerfile
           # docker build arg
@@ -69,3 +69,11 @@ jobs:
             BASE_CONTAINER=${{ env.BASE_REGISTRY }}/${{ env.BASE_NAMESPACE }}/${{ env.BASE_REPO }}:${{ env.BASE_TAG }}
           tags: |
             ${{ env.TARGET_REGISTRY }}/${{ env.TARGET_NAMESPACE }}/${{ env.TARGET_REPO }}:${{ env.WORKLOAD_TYPE }}-${{ env.APP_VERSION }}
+
+      # test python
+      - name: Test python and pdm
+        run: |
+          docker run --entrypoint bash --rm ${{ env.TARGET_REGISTRY }}/${{ env.TARGET_NAMESPACE }}/${{ env.TARGET_REPO }}:${{ env.WORKLOAD_TYPE }}-${{ env.APP_VERSION }} -c "ls -al /project/.venv/bin/python"
+          docker run --entrypoint bash --rm ${{ env.TARGET_REGISTRY }}/${{ env.TARGET_NAMESPACE }}/${{ env.TARGET_REPO }}:${{ env.WORKLOAD_TYPE }}-${{ env.APP_VERSION }} -c "ls -al /usr/local/bin/python"
+          docker run --entrypoint bash --rm ${{ env.TARGET_REGISTRY }}/${{ env.TARGET_NAMESPACE }}/${{ env.TARGET_REPO }}:${{ env.WORKLOAD_TYPE }}-${{ env.APP_VERSION }} -c "which python"
+          docker run --entrypoint bash --rm ${{ env.TARGET_REGISTRY }}/${{ env.TARGET_NAMESPACE }}/${{ env.TARGET_REPO }}:${{ env.WORKLOAD_TYPE }}-${{ env.APP_VERSION }} -c "python --version"
