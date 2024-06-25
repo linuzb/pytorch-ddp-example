@@ -39,7 +39,7 @@ RUN apt-get update --yes \
     python3 \
     python3-pip \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
-    ln -sf /usr/bin/python3 /project/.venv/bin/python
+    && ln -sf /usr/bin/python3 /project/.venv/bin/python
 
 COPY . .
 
