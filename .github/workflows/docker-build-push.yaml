@@ -73,6 +73,6 @@ jobs:
       # test python
       - name: Test python and pdm
         run: |
-          docker run -it --entrypoint bash --rm ${{ env.TARGET_REGISTRY }}/${{ env.TARGET_NAMESPACE }}/${{ env.TARGET_REPO }}:${{ env.WORKLOAD_TYPE }}-${{ env.APP_VERSION }} -c "ls -al /project/.venv/bin/python"
-          docker run -it --entrypoint bash --rm ${{ env.TARGET_REGISTRY }}/${{ env.TARGET_NAMESPACE }}/${{ env.TARGET_REPO }}:${{ env.WORKLOAD_TYPE }}-${{ env.APP_VERSION }} -c "ls -al /usr/local/bin/python"
-          docker run -it --entrypoint bash --rm ${{ env.TARGET_REGISTRY }}/${{ env.TARGET_NAMESPACE }}/${{ env.TARGET_REPO }}:${{ env.WORKLOAD_TYPE }}-${{ env.APP_VERSION }} -c "which python"
+          docker run --entrypoint bash --rm ${{ env.TARGET_REGISTRY }}/${{ env.TARGET_NAMESPACE }}/${{ env.TARGET_REPO }}:${{ env.WORKLOAD_TYPE }}-${{ env.APP_VERSION }} -c "ls -al /project/.venv/bin/python"
+          docker run --entrypoint bash --rm ${{ env.TARGET_REGISTRY }}/${{ env.TARGET_NAMESPACE }}/${{ env.TARGET_REPO }}:${{ env.WORKLOAD_TYPE }}-${{ env.APP_VERSION }} -c "ls -al /usr/local/bin/python"
+          docker run --entrypoint bash --rm ${{ env.TARGET_REGISTRY }}/${{ env.TARGET_NAMESPACE }}/${{ env.TARGET_REPO }}:${{ env.WORKLOAD_TYPE }}-${{ env.APP_VERSION }} -c "which python"
