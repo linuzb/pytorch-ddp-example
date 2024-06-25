@@ -1,99 +1,224 @@
+from __future__ import print_function
+
 import argparse
-from tqdm import tqdm
+import os
+
 import torch
-import torchvision
+import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
-# 新增：
-import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel as DDP
+import torch.optim as optim
+from tensorboardX import SummaryWriter
+from torch.utils.data import DistributedSampler
+from torchvision import datasets, transforms
 
-### 1. 基础模块 ### 
-# 假设我们的模型是这个，与DDP无关
-class ToyModel(nn.Module):
+
+class Net(nn.Module):
     def __init__(self):
-        super(ToyModel, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        super(Net, self).__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5, 1)
+        self.conv2 = nn.Conv2d(20, 50, 5, 1)
+        self.fc1 = nn.Linear(4 * 4 * 50, 500)
+        self.fc2 = nn.Linear(500, 10)
+
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 16 * 5 * 5)
+        x = F.relu(self.conv1(x))
+        x = F.max_pool2d(x, 2, 2)
+        x = F.relu(self.conv2(x))
+        x = F.max_pool2d(x, 2, 2)
+        x = x.view(-1, 4 * 4 * 50)
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
+        x = self.fc2(x)
+        return F.log_softmax(x, dim=1)
 
-# 假设我们的数据是这个
-def get_dataset():
-    transform = torchvision.transforms.Compose([
-        torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ])
-    my_trainset = torchvision.datasets.CIFAR10(root='./data', train=True, 
-        download=True, transform=transform)
-    # DDP：使用DistributedSampler，DDP帮我们把细节都封装起来了。
-    #      用，就完事儿！sampler的原理，第二篇中有介绍。
-    train_sampler = torch.utils.data.distributed.DistributedSampler(my_trainset)
-    # DDP：需要注意的是，这里的batch_size指的是每个进程下的batch_size。
-    #      也就是说，总batch_size是这里的batch_size再乘以并行数(world_size)。
-    trainloader = torch.utils.data.DataLoader(my_trainset, 
-        batch_size=16, num_workers=2, sampler=train_sampler)
-    return trainloader
-    
-### 2. 初始化我们的模型、数据、各种配置  ####
-# DDP：从外部得到local_rank参数
-parser = argparse.ArgumentParser(description="PyTorch DDP Example")
-parser.add_argument("--local_rank", default=-1, type=int)
-FLAGS = parser.parse_args()
-local_rank = FLAGS.local_rank
 
-# DDP：DDP backend初始化
-torch.cuda.set_device(local_rank)
-dist.init_process_group(backend='nccl')  # nccl是GPU设备上最快、最推荐的后端
+def train(args, model, device, train_loader, epoch, writer):
+    model.train()
+    optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
-# 准备数据，要在DDP初始化之后进行
-trainloader = get_dataset()
+    for batch_idx, (data, target) in enumerate(train_loader):
+        # Attach tensors to the device.
+        data, target = data.to(device), target.to(device)
 
-# 构造模型
-model = ToyModel().to(local_rank)
-# DDP: Load模型要在构造DDP模型之前，且只需要在master上加载就行了。
-ckpt_path = None
-if dist.get_rank() == 0 and ckpt_path is not None:
-    model.load_state_dict(torch.load(ckpt_path))
-# DDP: 构造DDP model
-model = DDP(model, device_ids=[local_rank], output_device=local_rank)
-
-# DDP: 要在构造DDP model之后，才能用model初始化optimizer。
-optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
-
-# 假设我们的loss是这个
-loss_func = nn.CrossEntropyLoss().to(local_rank)
-
-### 3. 网络训练  ###
-model.train()
-iterator = tqdm(range(100))
-for epoch in iterator:
-    # DDP：设置sampler的epoch，
-    # DistributedSampler需要这个来指定shuffle方式，
-    # 通过维持各个进程之间的相同随机数种子使不同进程能获得同样的shuffle效果。
-    trainloader.sampler.set_epoch(epoch)
-    # 后面这部分，则与原来完全一致了。
-    for data, label in trainloader:
-        data, label = data.to(local_rank), label.to(local_rank)
         optimizer.zero_grad()
-        prediction = model(data)
-        loss = loss_func(prediction, label)
+        output = model(data)
+        loss = F.nll_loss(output, target)
         loss.backward()
-        iterator.desc = "loss = %0.3f" % loss
         optimizer.step()
-    # DDP:
-    # 1. save模型的时候，和DP模式一样，有一个需要注意的点：保存的是model.module而不是model。
-    #    因为model其实是DDP model，参数是被`model=DDP(model)`包起来的。
-    # 2. 只需要在进程0上保存一次就行了，避免多次保存重复的东西。
-    if dist.get_rank() == 0:
-        torch.save(model.module.state_dict(), "%d.ckpt" % epoch)
+        if batch_idx % args.log_interval == 0:
+            print(
+                "Train Epoch: {} [{}/{} ({:.0f}%)]\tloss={:.4f}".format(
+                    epoch,
+                    batch_idx * len(data),
+                    len(train_loader.dataset),
+                    100.0 * batch_idx / len(train_loader),
+                    loss.item(),
+                )
+            )
+            niter = epoch * len(train_loader) + batch_idx
+            writer.add_scalar("loss", loss.item(), niter)
+
+
+def test(model, device, test_loader, writer, epoch):
+    model.eval()
+
+    correct = 0
+    with torch.no_grad():
+        for data, target in test_loader:
+            # Attach tensors to the device.
+            data, target = data.to(device), target.to(device)
+
+            output = model(data)
+            # Get the index of the max log-probability.
+            pred = output.max(1, keepdim=True)[1]
+            correct += pred.eq(target.view_as(pred)).sum().item()
+
+    print("\naccuracy={:.4f}\n".format(float(correct) / len(test_loader.dataset)))
+    writer.add_scalar("accuracy", float(correct) / len(test_loader.dataset), epoch)
+
+
+def main():
+    # Training settings
+    parser = argparse.ArgumentParser(description="PyTorch FashionMNIST Example")
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=64,
+        metavar="N",
+        help="input batch size for training (default: 64)",
+    )
+    parser.add_argument(
+        "--test-batch-size",
+        type=int,
+        default=1000,
+        metavar="N",
+        help="input batch size for testing (default: 1000)",
+    )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=1,
+        metavar="N",
+        help="number of epochs to train (default: 10)",
+    )
+    parser.add_argument(
+        "--lr",
+        type=float,
+        default=0.01,
+        metavar="LR",
+        help="learning rate (default: 0.01)",
+    )
+    parser.add_argument(
+        "--momentum",
+        type=float,
+        default=0.5,
+        metavar="M",
+        help="SGD momentum (default: 0.5)",
+    )
+    parser.add_argument(
+        "--no-cuda",
+        action="store_true",
+        default=False,
+        help="disables CUDA training",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=1,
+        metavar="S",
+        help="random seed (default: 1)",
+    )
+    parser.add_argument(
+        "--log-interval",
+        type=int,
+        default=10,
+        metavar="N",
+        help="how many batches to wait before logging training status",
+    )
+    parser.add_argument(
+        "--save-model",
+        action="store_true",
+        default=False,
+        help="For Saving the current Model",
+    )
+    parser.add_argument(
+        "--dir",
+        default="logs",
+        metavar="L",
+        help="directory where summary logs are stored",
+    )
+
+    parser.add_argument(
+        "--backend",
+        type=str,
+        help="Distributed backend",
+        choices=[dist.Backend.GLOO, dist.Backend.NCCL, dist.Backend.MPI],
+        default=dist.Backend.GLOO,
+    )
+
+    args = parser.parse_args()
+    use_cuda = not args.no_cuda and torch.cuda.is_available()
+    if use_cuda:
+        print("Using CUDA")
+        if args.backend != dist.Backend.NCCL:
+            print(
+                "Warning. Please use `nccl` distributed backend for the best performance using GPUs"
+            )
+
+    writer = SummaryWriter(args.dir)
+
+    torch.manual_seed(args.seed)
+
+    device = torch.device("cuda" if use_cuda else "cpu")
+
+    # Attach model to the device.
+    model = Net().to(device)
+
+    print("Using distributed PyTorch with {} backend".format(args.backend))
+    # Set distributed training environment variables to run this training script locally.
+    if "WORLD_SIZE" not in os.environ:
+        os.environ["RANK"] = "0"
+        os.environ["WORLD_SIZE"] = "1"
+        os.environ["MASTER_ADDR"] = "localhost"
+        os.environ["MASTER_PORT"] = "1234"
+
+    print(f"World Size: {os.environ['WORLD_SIZE']}. Rank: {os.environ['RANK']}")
+
+    dist.init_process_group(backend=args.backend)
+    model = nn.parallel.DistributedDataParallel(model)
+
+    # Get FashionMNIST train and test dataset.
+    train_ds = datasets.FashionMNIST(
+        "../data",
+        train=True,
+        download=True,
+        transform=transforms.Compose([transforms.ToTensor()]),
+    )
+    test_ds = datasets.FashionMNIST(
+        "../data",
+        train=False,
+        download=True,
+        transform=transforms.Compose([transforms.ToTensor()]),
+    )
+    # Add train and test loaders.
+    train_loader = torch.utils.data.DataLoader(
+        train_ds,
+        batch_size=args.batch_size,
+        sampler=DistributedSampler(train_ds),
+    )
+    test_loader = torch.utils.data.DataLoader(
+        test_ds,
+        batch_size=args.test_batch_size,
+        sampler=DistributedSampler(test_ds),
+    )
+
+    for epoch in range(1, args.epochs + 1):
+        train(args, model, device, train_loader, epoch, writer)
+        test(model, device, test_loader, writer, epoch)
+
+    if args.save_model:
+        torch.save(model.state_dict(), "mnist_cnn.pt")
+
+
+if __name__ == "__main__":
+    main()
