@@ -16,7 +16,7 @@ spec:
             effect: "NoSchedule"
           containers:
             - name: pytorch
-              image: registry.cn/linuzb/pytorch:pytorch-ddp-045d72a
+              image: registry.cn/linuzb/pytorch:pytorch-ddp-239049a
               command: ["/bin/bash", "-c"] # 使用bash作为入口点，并传入-c参数以执行后续命令字符串
               args: ["
                 ln -sf /usr/bin/python3 /project/.venv/bin/python; 
@@ -36,7 +36,7 @@ spec:
             effect: "NoSchedule"
           containers: 
             - name: pytorch
-              image: registry.cn/linuzb/pytorch:pytorch-ddp-045d72a
+              image: registry.cn/linuzb/pytorch:pytorch-ddp-239049a
               command: ["/bin/bash", "-c"] # 使用bash作为入口点，并传入-c参数以执行后续命令字符串
               args: ["
                 ln -sf /usr/bin/python3 /project/.venv/bin/python; 
