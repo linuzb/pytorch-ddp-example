@@ -28,8 +28,19 @@ class ProxyFashionMNIST(datasets.FashionMNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-
-    mirrors = ["http://registry.cn:9001/browser/dataset/"]
+    def __init__(
+        self,
+        root: Union[str, Path],
+        train: bool = True,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        download: bool = False,
+        mirror: string = "",
+    ) -> None:
+        super().__init__(root, transform=transform, target_transform=target_transform, download=download, mirror=mirror)
+        if mirror != "":
+            self.mirrors = [mirror]
+    
 
 class Net(nn.Module):
     def __init__(self):
@@ -174,6 +185,14 @@ def main():
         default=dist.Backend.GLOO,
     )
 
+    parser.add_argument(
+        "--dataset-mirror",
+        type=str,
+        default="",
+        metavar="D",
+        help="Dataset mirror",
+    )
+
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     if use_cuda:
@@ -212,6 +231,7 @@ def main():
         train=True,
         download=True,
         transform=transforms.Compose([transforms.ToTensor()]),
+        mirror=args.dataset_mirror,
     )
     # test_ds = datasets.FashionMNIST(
     test_ds = ProxyFashionMNIST(
@@ -219,6 +239,7 @@ def main():
         train=False,
         download=True,
         transform=transforms.Compose([transforms.ToTensor()]),
+        mirror=args.dataset_mirror,
     )
     # Add train and test loaders.
     train_loader = torch.utils.data.DataLoader(
