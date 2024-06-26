@@ -12,6 +12,24 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DistributedSampler
 from torchvision import datasets, transforms
 
+class ProxyFashionMNIST(datasets.FashionMNIST):
+    """`Fashion-MNIST <https://github.com/zalandoresearch/fashion-mnist>`_ Dataset.
+
+    Args:
+        root (str or ``pathlib.Path``): Root directory of dataset where ``FashionMNIST/raw/train-images-idx3-ubyte``
+            and  ``FashionMNIST/raw/t10k-images-idx3-ubyte`` exist.
+        train (bool, optional): If True, creates dataset from ``train-images-idx3-ubyte``,
+            otherwise from ``t10k-images-idx3-ubyte``.
+        download (bool, optional): If True, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again.
+        transform (callable, optional): A function/transform that  takes in a PIL image
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
+        target_transform (callable, optional): A function/transform that takes in the
+            target and transforms it.
+    """
+
+    mirrors = ["http://registry.cn:9001/browser/dataset/"]
 
 class Net(nn.Module):
     def __init__(self):
@@ -188,13 +206,15 @@ def main():
     model = nn.parallel.DistributedDataParallel(model)
 
     # Get FashionMNIST train and test dataset.
-    train_ds = datasets.FashionMNIST(
+    # train_ds = datasets.FashionMNIST(
+    train_ds = ProxyFashionMNIST(
         "../data",
         train=True,
         download=True,
         transform=transforms.Compose([transforms.ToTensor()]),
     )
-    test_ds = datasets.FashionMNIST(
+    # test_ds = datasets.FashionMNIST(
+    test_ds = ProxyFashionMNIST(
         "../data",
         train=False,
         download=True,
