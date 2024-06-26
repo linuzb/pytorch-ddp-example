@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import argparse
 import os
+import string
 
 import torch
 import torch.distributed as dist
@@ -11,23 +12,13 @@ import torch.optim as optim
 from tensorboardX import SummaryWriter
 from torch.utils.data import DistributedSampler
 from torchvision import datasets, transforms
+from pathlib import Path
+from typing import Callable, Optional, Union, List
 
 class ProxyFashionMNIST(datasets.FashionMNIST):
-    """`Fashion-MNIST <https://github.com/zalandoresearch/fashion-mnist>`_ Dataset.
 
-    Args:
-        root (str or ``pathlib.Path``): Root directory of dataset where ``FashionMNIST/raw/train-images-idx3-ubyte``
-            and  ``FashionMNIST/raw/t10k-images-idx3-ubyte`` exist.
-        train (bool, optional): If True, creates dataset from ``train-images-idx3-ubyte``,
-            otherwise from ``t10k-images-idx3-ubyte``.
-        download (bool, optional): If True, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
-        transform (callable, optional): A function/transform that  takes in a PIL image
-            and returns a transformed version. E.g, ``transforms.RandomCrop``
-        target_transform (callable, optional): A function/transform that takes in the
-            target and transforms it.
-    """
+    mirrors = ["http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"]
+
     def __init__(
         self,
         root: Union[str, Path],
@@ -35,12 +26,16 @@ class ProxyFashionMNIST(datasets.FashionMNIST):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
-        mirror: string = "",
+        mirrors: Optional[List[str]] = None,
     ) -> None:
-        super().__init__(root, transform=transform, target_transform=target_transform, download=download, mirror=mirror)
-        if mirror != "":
-            self.mirrors = [mirror]
-    
+
+        # 如果 mirrors 参数为空，则使用默认的 mirrors 值
+        if mirrors is None:
+            self.mirrors = datasets.FashionMNIST.mirrors
+        else:
+            self.mirrors = mirrors
+
+        super(ProxyFashionMNIST, self).__init__(root, transform=transform, target_transform=target_transform, download=download)
 
 class Net(nn.Module):
     def __init__(self):
@@ -227,19 +222,19 @@ def main():
     # Get FashionMNIST train and test dataset.
     # train_ds = datasets.FashionMNIST(
     train_ds = ProxyFashionMNIST(
-        "../data",
+        "./data",
         train=True,
         download=True,
         transform=transforms.Compose([transforms.ToTensor()]),
-        mirror=args.dataset_mirror,
+        mirrors = None if args.dataset_mirror == '' else [args.dataset_mirror],
     )
     # test_ds = datasets.FashionMNIST(
     test_ds = ProxyFashionMNIST(
-        "../data",
+        "./data",
         train=False,
         download=True,
         transform=transforms.Compose([transforms.ToTensor()]),
-        mirror=args.dataset_mirror,
+        mirrors = None if args.dataset_mirror == '' else [args.dataset_mirror],
     )
     # Add train and test loaders.
     train_loader = torch.utils.data.DataLoader(
