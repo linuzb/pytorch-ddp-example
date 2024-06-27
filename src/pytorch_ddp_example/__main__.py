@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import argparse
 import os
+import string
 
 import torch
 import torch.distributed as dist
@@ -11,7 +12,30 @@ import torch.optim as optim
 from tensorboardX import SummaryWriter
 from torch.utils.data import DistributedSampler
 from torchvision import datasets, transforms
+from pathlib import Path
+from typing import Callable, Optional, Union, List
 
+class ProxyFashionMNIST(datasets.FashionMNIST):
+
+    mirrors = ["http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"]
+
+    def __init__(
+        self,
+        root: Union[str, Path],
+        train: bool = True,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        download: bool = False,
+        mirrors: Optional[List[str]] = None,
+    ) -> None:
+
+        # 如果 mirrors 参数为空，则使用默认的 mirrors 值
+        if mirrors is None:
+            self.mirrors = datasets.FashionMNIST.mirrors
+        else:
+            self.mirrors = mirrors
+
+        super(ProxyFashionMNIST, self).__init__(root, transform=transform, target_transform=target_transform, download=download)
 
 class Net(nn.Module):
     def __init__(self):
@@ -156,6 +180,14 @@ def main():
         default=dist.Backend.GLOO,
     )
 
+    parser.add_argument(
+        "--dataset-mirror",
+        type=str,
+        default="",
+        metavar="D",
+        help="Dataset mirror",
+    )
+
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     if use_cuda:
@@ -188,17 +220,21 @@ def main():
     model = nn.parallel.DistributedDataParallel(model)
 
     # Get FashionMNIST train and test dataset.
-    train_ds = datasets.FashionMNIST(
-        "../data",
+    # train_ds = datasets.FashionMNIST(
+    train_ds = ProxyFashionMNIST(
+        "./data",
         train=True,
         download=True,
         transform=transforms.Compose([transforms.ToTensor()]),
+        mirrors = None if args.dataset_mirror == '' else [args.dataset_mirror],
     )
-    test_ds = datasets.FashionMNIST(
-        "../data",
+    # test_ds = datasets.FashionMNIST(
+    test_ds = ProxyFashionMNIST(
+        "./data",
         train=False,
         download=True,
         transform=transforms.Compose([transforms.ToTensor()]),
+        mirrors = None if args.dataset_mirror == '' else [args.dataset_mirror],
     )
     # Add train and test loaders.
     train_loader = torch.utils.data.DataLoader(

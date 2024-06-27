@@ -63,7 +63,7 @@ jobs:
         with:
           push: true
           context: .
-          file: deploy/docker/Dockerfile
+          file: deploy/image/Dockerfile
           # docker build arg
           build-args: |
             BASE_CONTAINER=${{ env.BASE_REGISTRY }}/${{ env.BASE_NAMESPACE }}/${{ env.BASE_REPO }}:${{ env.BASE_TAG }}

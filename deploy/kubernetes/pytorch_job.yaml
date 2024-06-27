@@ -16,7 +16,7 @@ spec:
             effect: "NoSchedule"
           containers:
             - name: pytorch
-              image: registry.cn/linuzb/pytorch:pytorch-ddp-3da7d82
+              image: registry.cn/linuzb/pytorch:pytorch-ddp-4aebec7
               command:
               - "python"
               - "/project/src/pytorch_ddp_example/__main__.py"
@@ -30,6 +30,7 @@ spec:
               - --log-interval=10
               - --dir=logs
               - --backend=nccl
+              - --dataset-mirror=http://registry.cn:9000/dataset/
               resources: 
                 limits:
                   nvidia.com/gpu: 1
@@ -44,7 +45,7 @@ spec:
             effect: "NoSchedule"
           containers: 
             - name: pytorch
-              image: registry.cn/linuzb/pytorch:pytorch-ddp-3da7d82
+              image: registry.cn/linuzb/pytorch:pytorch-ddp-4aebec7
               command:
               - "python"
               - "/project/src/pytorch_ddp_example/__main__.py"
@@ -58,6 +59,7 @@ spec:
               - --log-interval=10
               - --dir=logs
               - --backend=nccl
+              - --dataset-mirror=http://registry.cn:9000/dataset/
               resources: 
                 limits:
                   nvidia.com/gpu: 1
