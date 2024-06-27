@@ -16,7 +16,7 @@ spec:
             effect: "NoSchedule"
           containers:
             - name: pytorch
-              image: registry.cn/linuzb/pytorch:pytorch-ddp-3da7d82
+              image: registry.cn/linuzb/pytorch:pytorch-ddp-4aebec7
               command:
               - "python"
               - "/project/src/pytorch_ddp_example/__main__.py"
@@ -45,7 +45,7 @@ spec:
             effect: "NoSchedule"
           containers: 
             - name: pytorch
-              image: registry.cn/linuzb/pytorch:pytorch-ddp-3da7d82
+              image: registry.cn/linuzb/pytorch:pytorch-ddp-4aebec7
               command:
               - "python"
               - "/project/src/pytorch_ddp_example/__main__.py"
