@@ -30,6 +30,7 @@ spec:
               - --log-interval=10
               - --dir=logs
               - --backend=nccl
+              - --dataset-mirror=http://registry.cn:9000/dataset/
               resources: 
                 limits:
                   nvidia.com/gpu: 1
@@ -58,6 +59,7 @@ spec:
               - --log-interval=10
               - --dir=logs
               - --backend=nccl
+              - --dataset-mirror=http://registry.cn:9000/dataset/
               resources: 
                 limits:
                   nvidia.com/gpu: 1

@@ -31,4 +31,4 @@ python $script_path --epochs=50 \
                     --log-interval=10 \
                     --dir=logs \
                     --backend=nccl \
-                    --dataset-mirror=http://registry.cn/
+                    --dataset-mirror=http://registry.cn:9000/dataset/

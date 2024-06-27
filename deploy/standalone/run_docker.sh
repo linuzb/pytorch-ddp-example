@@ -31,4 +31,5 @@ docker run --gpus all \
   --seed=1 \
   --log-interval=10 \
   --dir=logs \
-  --backend=nccl
+  --backend=nccl \
+  --dataset-mirror=http://registry.cn:9000/dataset/
