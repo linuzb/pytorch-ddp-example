@@ -3,6 +3,7 @@ from __future__ import print_function
 import argparse
 import os
 import string
+import glob
 
 import torch
 import torch.distributed as dist
@@ -100,6 +101,41 @@ def test(model, device, test_loader, writer, epoch):
     print("\naccuracy={:.4f}\n".format(float(correct) / len(test_loader.dataset)))
     writer.add_scalar("accuracy", float(correct) / len(test_loader.dataset), epoch)
 
+def save_model(model, epoch, save_path="model_checkpoint.pth"):
+    """
+    保存模型状态到文件。
+    
+    参数:
+    - model: 要保存的模型。
+    - epoch: 当前epoch数，用于文件命名。
+    - save_path: 保存文件的路径。
+    """
+    if dist.get_rank() == 0:  # 只有rank 0进程保存模型
+        torch.save(model.state_dict(), f"{save_path}_{epoch}.pth")
+        print(f"Model saved at epoch {epoch}")
+
+def load_model(model, load_path="model_checkpoint.pth"):
+    """
+    尝试加载模型状态。
+    
+    参数:
+    - model: 要加载状态的模型。
+    - load_path: 加载文件的路径，支持通配符。
+    """
+    if dist.get_rank() == 0:  # 只有rank 0进程尝试加载模型
+        # 获取所有匹配的文件
+        files = glob.glob(f"{load_path}_*.pth")
+        if files:
+            # 按epoch排序，选择最新的模型
+            latest_file = max(files, key=os.path.getmtime)
+            try:
+                model.load_state_dict(torch.load(latest_file))
+                print(f"Model loaded from {latest_file}")
+                return latest_file
+            except Exception as e:
+                print(f"Error loading model: {e}")
+        else:
+            print(f"No checkpoint found at {load_path}")
 
 def main():
     # Training settings
@@ -111,6 +147,7 @@ def main():
         metavar="N",
         help="input batch size for training (default: 64)",
     )
+
     parser.add_argument(
         "--test-batch-size",
         type=int,
@@ -118,6 +155,7 @@ def main():
         metavar="N",
         help="input batch size for testing (default: 1000)",
     )
+
     parser.add_argument(
         "--epochs",
         type=int,
@@ -125,6 +163,7 @@ def main():
         metavar="N",
         help="number of epochs to train (default: 10)",
     )
+
     parser.add_argument(
         "--lr",
         type=float,
@@ -132,6 +171,7 @@ def main():
         metavar="LR",
         help="learning rate (default: 0.01)",
     )
+
     parser.add_argument(
         "--momentum",
         type=float,
@@ -139,12 +179,14 @@ def main():
         metavar="M",
         help="SGD momentum (default: 0.5)",
     )
+
     parser.add_argument(
         "--no-cuda",
         action="store_true",
         default=False,
         help="disables CUDA training",
     )
+
     parser.add_argument(
         "--seed",
         type=int,
@@ -152,6 +194,7 @@ def main():
         metavar="S",
         help="random seed (default: 1)",
     )
+
     parser.add_argument(
         "--log-interval",
         type=int,
@@ -159,12 +202,7 @@ def main():
         metavar="N",
         help="how many batches to wait before logging training status",
     )
-    parser.add_argument(
-        "--save-model",
-        action="store_true",
-        default=False,
-        help="For Saving the current Model",
-    )
+
     parser.add_argument(
         "--dir",
         default="logs",
@@ -184,8 +222,14 @@ def main():
         "--dataset-mirror",
         type=str,
         default="",
-        metavar="D",
         help="Dataset mirror",
+    )
+
+    parser.add_argument(
+        "--ckpt-path",
+        type=str,
+        default="checkpoint/model_checkpoint",
+        help="Checkpoint path",
     )
 
     args = parser.parse_args()
@@ -217,7 +261,16 @@ def main():
     print(f"World Size: {os.environ['WORLD_SIZE']}. Rank: {os.environ['RANK']}")
 
     dist.init_process_group(backend=args.backend)
+
     model = nn.parallel.DistributedDataParallel(model)
+
+    latest_checkpoint = load_model(model=model, load_path=args.ckpt_path)
+    if latest_checkpoint:
+        # 如果加载成功，可以从相应的epoch开始训练
+        start_epoch = int(os.path.basename(latest_checkpoint).split("_")[-1].split(".")[0]) + 1
+    else:
+        # 如果没有找到模型或加载失败，从第一个epoch开始
+        start_epoch = 1
 
     # Get FashionMNIST train and test dataset.
     # train_ds = datasets.FashionMNIST(
@@ -248,13 +301,13 @@ def main():
         sampler=DistributedSampler(test_ds),
     )
 
-    for epoch in range(1, args.epochs + 1):
+    for epoch in range(start_epoch, args.epochs + 1):
         train(args, model, device, train_loader, epoch, writer)
+        # if args.save_model and dist.get_rank() ==0:
+        #     print("torch save model, patch: {}".format(args.ckpt_path))
+        #     torch.save(model.state_dict(), args.ckpt_path)
         test(model, device, test_loader, writer, epoch)
-
-    if args.save_model:
-        torch.save(model.state_dict(), "mnist_cnn.pt")
-
+        save_model(model, epoch, save_path=args.ckpt_path)
 
 if __name__ == "__main__":
     main()
