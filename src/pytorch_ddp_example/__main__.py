@@ -111,6 +111,12 @@ def save_model(model, epoch, save_path="model_checkpoint.pth"):
     - save_path: 保存文件的路径。
     """
     if dist.get_rank() == 0:  # 只有rank 0进程保存模型
+        # 检查save_path中是否包含目录路径，并创建
+        directory = os.path.dirname(save_path)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory, exist_ok=True)
+        
+        # 保存模型
         torch.save(model.state_dict(), f"{save_path}_{epoch}.pth")
         print(f"Model saved at epoch {epoch}")
 
