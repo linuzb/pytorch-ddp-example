@@ -22,8 +22,8 @@ if [ ! -f "$script_path" ]; then
 fi
 
 # 执行 Python 脚本
-python $script_path --epochs=50 \
-                    --batch-size=128 \
+python $script_path --epochs=9 \
+                    --batch-size=64 \
                     --test-batch-size=1000 \
                     --lr=0.01 \
                     --momentum=0.5 \
@@ -31,4 +31,5 @@ python $script_path --epochs=50 \
                     --log-interval=10 \
                     --dir=logs \
                     --backend=nccl \
-                    --dataset-mirror=http://registry.cn:9000/dataset/
+                    --ckpt-path="checkpoint/model_checkpoint"
+                    # --dataset-mirror=http://registry.cn:9000/dataset/

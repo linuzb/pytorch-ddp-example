@@ -27,6 +27,8 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 WORKDIR /project
 
+RUN mkdir /project/pytorch-ddp-example
+
 # retrieve packages from build stage
 COPY --from=builder /project/.venv/ /project/.venv
 
@@ -41,6 +43,6 @@ RUN apt-get update --yes \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && ln -sf /usr/bin/python3 /project/.venv/bin/python
 
-COPY . .
+COPY . /project/pytorch-ddp-example
 
-ENTRYPOINT ["python", "/project/src/pytorch_ddp_example/__main__.py"]
+ENTRYPOINT ["python", "/project/pytorch-ddp-example/src/pytorch_ddp_example/__main__.py"]

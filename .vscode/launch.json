@@ -12,7 +12,8 @@
         "--seed=1",
         "--log-interval=10",
         "--dir=logs",
-        "--backend=nccl"
+        "--backend=nccl",
+        "--ckpt-path=checkpoint/model_checkpoint"
         // "--dataset-mirror=http://registry.cn"
     ],
     "env": {
