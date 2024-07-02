@@ -13,6 +13,7 @@ import torch.optim as optim
 from tensorboardX import SummaryWriter
 from torch.utils.data import DistributedSampler
 from torchvision import datasets, transforms
+from torch.distributed.algorithms.ddp_comm_hooks import powerSGD_hook as powerSGD
 from pathlib import Path
 from typing import Callable, Optional, Union, List
 
@@ -238,6 +239,13 @@ def main():
         help="Checkpoint path",
     )
 
+    parser.add_argument(
+        "--use-powersdg-hook",
+        action="store_true",
+        default=False,
+        help="use powerSDG hook",
+    )
+
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     if use_cuda:
@@ -269,6 +277,11 @@ def main():
     dist.init_process_group(backend=args.backend)
 
     model = nn.parallel.DistributedDataParallel(model)
+
+    if args.use_powersdg_hook:
+        print("Using PowerSGD hook...")
+        state = powerSGD.PowerSGDState(process_group=None, matrix_approximation_rank=1, start_powerSGD_iter=10, min_compression_rate=0.5)
+        model.register_comm_hook(state, powerSGD.powerSGD_hook)
 
     latest_checkpoint = load_model(model=model, load_path=args.ckpt_path)
     if latest_checkpoint:
