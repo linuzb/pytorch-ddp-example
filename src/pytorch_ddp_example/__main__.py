@@ -279,6 +279,7 @@ def main():
     model = nn.parallel.DistributedDataParallel(model)
 
     if args.use_powersdg_hook:
+        print("Using PowerSGD hook...")
         state = powerSGD.PowerSGDState(process_group=None, matrix_approximation_rank=1, start_powerSGD_iter=10, min_compression_rate=0.5)
         model.register_comm_hook(state, powerSGD.powerSGD_hook)
 
