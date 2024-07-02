@@ -10,10 +10,15 @@ spec:
       restartPolicy: OnFailure
       template:
         spec:
-          tolerations:
-          - key: "node-role.kubernetes.io/control-plane"
-            operator: "Exists"
-            effect: "NoSchedule"
+          initContainers:
+          - name: git-pull
+            image: chainguard/git:latest  # 使用包含git的Docker镜像
+            command: ['sh', '-c']
+            args:
+            - git clone -b feat/comm_hook https://github.com/linuzb/pytorch-ddp-example.git /project/pytorch-ddp-example/
+            volumeMounts:
+            - name: project-volume
+              mountPath: /project/pytorch-ddp-example/
           containers:
             - name: pytorch
               image: registry.cn/linuzb/pytorch:pytorch-ddp-0fdbab1
@@ -34,6 +39,16 @@ spec:
               resources: 
                 limits:
                   nvidia.com/gpu: 1
+              volumeMounts:
+              - name: project-volume
+                mountPath: /project/pytorch-ddp-example/
+          volumes:
+          - name: project-volume
+            emptyDir: {}
+          tolerations:
+          - key: "node-role.kubernetes.io/control-plane"
+            operator: "Exists"
+            effect: "NoSchedule"
           # nodeSelector:
           #   gpu-type: nvidia-geforce-rtx-4090
 
@@ -42,11 +57,16 @@ spec:
       restartPolicy: OnFailure
       template:
         spec:
-          tolerations:
-          - key: "node-role.kubernetes.io/control-plane"
-            operator: "Exists"
-            effect: "NoSchedule"
-          containers: 
+          initContainers:
+          - name: git-pull
+            image: chainguard/git:latest  # 使用包含git的Docker镜像
+            command: ['sh', '-c']
+            args:
+            - git clone -b feat/comm_hook https://github.com/linuzb/pytorch-ddp-example.git /project/pytorch-ddp-example/
+            volumeMounts:
+            - name: project-volume
+              mountPath: /project/pytorch-ddp-example/
+          containers:
             - name: pytorch
               image: registry.cn/linuzb/pytorch:pytorch-ddp-0fdbab1
               command:
@@ -66,5 +86,15 @@ spec:
               resources: 
                 limits:
                   nvidia.com/gpu: 1
+              volumeMounts:
+              - name: project-volume
+                mountPath: /project/pytorch-ddp-example/
+          volumes:
+          - name: project-volume
+            emptyDir: {}
+          tolerations:
+          - key: "node-role.kubernetes.io/control-plane"
+            operator: "Exists"
+            effect: "NoSchedule"
           # nodeSelector:
           #   gpu-type: nvidia-geforce-rtx-4090
