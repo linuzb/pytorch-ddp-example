@@ -35,6 +35,7 @@ spec:
               - --log-interval=10
               - --dir=logs
               - --backend=nccl
+              - --use-powersdg-hook
               - --dataset-mirror=http://registry.cn:9000/dataset/
               resources: 
                 limits:
@@ -82,6 +83,7 @@ spec:
               - --log-interval=10
               - --dir=logs
               - --backend=nccl
+              - --use-powersdg-hook
               - --dataset-mirror=http://registry.cn:9000/dataset/
               resources: 
                 limits:
