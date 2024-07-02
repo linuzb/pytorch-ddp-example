@@ -1,6 +1,9 @@
-name: 'Build jupyter pytorch apbsn'
+name: 'Build Pytorch DDP Example'
 on:
   push:
+    paths:
+      - 'pyproject.toml'
+      - 'pdm.lock'
   workflow_dispatch:
 
 env:
@@ -69,6 +72,7 @@ jobs:
             BASE_CONTAINER=${{ env.BASE_REGISTRY }}/${{ env.BASE_NAMESPACE }}/${{ env.BASE_REPO }}:${{ env.BASE_TAG }}
           tags: |
             ${{ env.TARGET_REGISTRY }}/${{ env.TARGET_NAMESPACE }}/${{ env.TARGET_REPO }}:${{ env.WORKLOAD_TYPE }}-${{ env.APP_VERSION }}
+            ${{ env.TARGET_REGISTRY }}/${{ env.TARGET_NAMESPACE }}/${{ env.TARGET_REPO }}:${{ env.WORKLOAD_TYPE }}-latest
 
       # test python
       - name: Test python and pdm
