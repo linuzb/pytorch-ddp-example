@@ -26,8 +26,8 @@ spec:
               - "python"
               - "/project/pytorch-ddp-example/src/pytorch_ddp_example/__main__.py"
               args:
-              - --epochs=10
-              - --batch-size=64
+              - --epochs=20
+              - --batch-size=128
               - --test-batch-size=1000
               - --lr=0.01
               - --momentum=0.5
@@ -73,8 +73,8 @@ spec:
               - "python"
               - "/project/pytorch-ddp-example/src/pytorch_ddp_example/__main__.py"
               args:
-              - --epochs=10
-              - --batch-size=64
+              - --epochs=20
+              - --batch-size=128
               - --test-batch-size=1000
               - --lr=0.01
               - --momentum=0.5
