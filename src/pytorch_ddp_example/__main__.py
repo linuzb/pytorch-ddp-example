@@ -320,6 +320,8 @@ def main():
         sampler=DistributedSampler(test_ds),
     )
 
+    print("epochs :", args.epochs)
+
     for epoch in range(start_epoch, args.epochs + 1):
         train(args, model, device, train_loader, epoch, writer)
         # if args.save_model and dist.get_rank() ==0:

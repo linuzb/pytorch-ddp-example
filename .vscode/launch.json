@@ -1,32 +1,37 @@
 {
-    "name": "Python Debugger: Custom Script with Environment Variables",
-    "type": "python",
-    "request": "launch",
-    "program": "${workspaceFolder}/src/pytorch_ddp_example/__main__.py", // 确保这是你的Python脚本路径
-    "args": [
-        "--epochs=50",
-        "--batch-size=128",
-        "--test-batch-size=1000",
-        "--lr=0.01",
-        "--momentum=0.5",
-        "--seed=1",
-        "--log-interval=10",
-        "--dir=logs",
-        "--backend=nccl",
-        "--ckpt-path=checkpoint/model_checkpoint"
-        // "--dataset-mirror=http://registry.cn"
+    "configurations":[
+        {
+            "name": "Python Debugger: Custom Script with Environment Variables",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/pytorch_ddp_example/__main__.py", // 确保这是你的Python脚本路径
+            "args": [
+                "--epochs=52",
+                "--batch-size=128",
+                "--test-batch-size=1000",
+                "--lr=0.01",
+                "--momentum=0.5",
+                "--seed=1",
+                "--log-interval=10",
+                "--dir=logs",
+                "--backend=nccl",
+                "--ckpt-path=checkpoint/model_checkpoint"
+                // "--dataset-mirror=http://registry.cn"
+            ],
+            "env": {
+                "PYTHONUNBUFFERED": "1",
+                "MASTER_PORT": "23456",
+                "PET_MASTER_PORT": "23456",
+                "MASTER_ADDR": "127.0.0.1",
+                "PET_MASTER_ADDR": "127.0.0.1",
+                "WORLD_SIZE": "1",
+                "RANK": "0",
+                "PET_NPROC_PER_NODE": "auto",
+                "PET_NODE_RANK": "0",
+                "PET_NNODES": "1"
+            },
+            "console": "integratedTerminal"
+        }
     ],
-    "env": {
-        "PYTHONUNBUFFERED": "1",
-        "MASTER_PORT": "23456",
-        "PET_MASTER_PORT": "23456",
-        "MASTER_ADDR": "127.0.0.1",
-        "PET_MASTER_ADDR": "127.0.0.1",
-        "WORLD_SIZE": "1",
-        "RANK": "0",
-        "PET_NPROC_PER_NODE": "auto",
-        "PET_NODE_RANK": "0",
-        "PET_NNODES": "1"
-    },
-    "console": "integratedTerminal"
+
 }
