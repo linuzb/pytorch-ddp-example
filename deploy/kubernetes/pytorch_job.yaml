@@ -12,7 +12,7 @@ spec:
         spec:
           initContainers:
           - name: git-pull
-            image: chainguard/git:latest  # 使用包含git的Docker镜像
+            image: registry.cn/proxy/chainguard/git:latest  # 使用包含git的Docker镜像
             command: ['sh', '-c']
             args:
             - git clone https://github.com/linuzb/pytorch-ddp-example.git /project/pytorch-ddp-example/
@@ -60,7 +60,7 @@ spec:
         spec:
           initContainers:
           - name: git-pull
-            image: chainguard/git:latest  # 使用包含git的Docker镜像
+            image: registry.cn/proxy/chainguard/git:latest  # 使用包含git的Docker镜像
             command: ['sh', '-c']
             args:
             - git clone https://github.com/linuzb/pytorch-ddp-example.git /project/pytorch-ddp-example/
